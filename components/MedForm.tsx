@@ -2,13 +2,15 @@ import { saveMedicine } from '@/app/app/actions';
 import { ErrorLine, Photo, Icon } from './ui';
 import type { Med } from '@/lib/domain';
 import { SubmitButton } from './SubmitButton';
+import { PhotoPicker } from './PhotoPicker';
 
 const hhmm = (t?: string) => (t ? t.slice(0, 5) : undefined);
 
 export function MedForm({ med, error, personName }: { med?: Med; error: string | null; personName: string }) {
   const slot = (key: 'morning' | 'afternoon' | 'night', label: string, defN: number, defT: string) => (
-    <div className="card" style={{ padding: 10, gap: 6 }}>
-      <label className="lbl" htmlFor={`n_${key}`} style={{ margin: 0 }}>{label}: how many</label>
+    <div className="card slotpick">
+      <p className="slotpick-h">{label}</p>
+      <label className="lbl" htmlFor={`n_${key}`} style={{ margin: 0 }}>Tablets</label>
       <select id={`n_${key}`} name={`n_${key}`} className="in" defaultValue={String(med ? (med as any)[`n_${key}`] : defN)}>
         {[0, 1, 2, 3, 4].map((n) => <option key={n} value={n}>{n === 0 ? 'None' : n}</option>)}
       </select>
@@ -40,14 +42,10 @@ export function MedForm({ med, error, personName }: { med?: Med; error: string |
             <p className="lbl" style={{ margin: 0 }}>Photos ({personName} sees these first)</p>
             <div className="grid2">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ height: 120 }}><Photo id={med?.pill_photo_id ?? null} kind="pill" alt="Current pill photo" /></div>
-                <label className="btn out sm" htmlFor="pill" style={{ cursor: 'pointer' }}><Icon name="cam" size={20} />{med?.pill_photo_id ? 'Replace pill photo' : 'Add pill photo'}</label>
-                <input id="pill" name="pill" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="small" />
+                <PhotoPicker name="pill" kind="pill" label={med?.pill_photo_id ? 'Replace pill photo' : 'Add pill photo'} current={<Photo id={med?.pill_photo_id ?? null} kind="pill" alt="Current pill photo" />} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ height: 120 }}><Photo id={med?.strip_photo_id ?? null} kind="strip" alt="Current strip photo" /></div>
-                <label className="btn out sm" htmlFor="strip" style={{ cursor: 'pointer' }}><Icon name="cam" size={20} />{med?.strip_photo_id ? 'Replace strip photo' : 'Add strip photo'}</label>
-                <input id="strip" name="strip" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="small" />
+                <PhotoPicker name="strip" kind="strip" label={med?.strip_photo_id ? 'Replace strip photo' : 'Add strip photo'} current={<Photo id={med?.strip_photo_id ?? null} kind="strip" alt="Current strip photo" />} />
               </div>
             </div>
             <p className="small">JPG, PNG or WebP up to 5 MB. Photos are resized and their location data removed. Only this circle can see them.</p>

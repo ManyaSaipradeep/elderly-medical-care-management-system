@@ -44,6 +44,14 @@ export default async function MedDetail({ params, searchParams }: { params: Prom
             <div className="grid3">
               {[10, 15, 30].map((n) => <form key={n} action={refill}><input type="hidden" name="id" value={m.id} /><input type="hidden" name="add" value={n} /><button className="btn out sm" style={{ width: '100%' }}>+{n}</button></form>)}
             </div>
+            <form action={refill} className="row" style={{ gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <input type="hidden" name="id" value={m.id} />
+              <div style={{ flex: '1 1 140px' }}>
+                <label className="lbl" htmlFor="add" style={{ marginTop: 0 }}>Or type how many you added</label>
+                <input id="add" name="add" type="number" inputMode="numeric" min={1} max={1000} required className="in" placeholder="For example, 20" />
+              </div>
+              <button className="btn go sm" style={{ minHeight: 50 }}>Add tablets</button>
+            </form>
           </div>
           <div className="card">
             <p className="h2">Stop this medicine</p>

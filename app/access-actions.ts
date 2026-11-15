@@ -172,3 +172,11 @@ export async function logout() {
   await endMemberSession();
   redirect('/logged-out');
 }
+
+/** From the "Who are you?" step: someone with the code and passcode who is not on the list asks to join. */
+export async function signinToJoin() {
+  const t = await getTicket<{ circleId: string }>('signin');
+  if (!t) redirect('/join');
+  await setTicket('join', { circleId: t.circleId });
+  redirect('/join/details');
+}

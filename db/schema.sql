@@ -200,3 +200,7 @@ create table if not exists help_requests (
   check ((handled_at is null) = (handled_by is null))
 );
 create index if not exists help_open on help_requests (circle_id) where handled_at is null;
+
+-- v3: questions from the care recipient show in the app until someone responds.
+alter table change_notices add column if not exists handled_by text check (handled_by is null or length(handled_by) <= 80);
+alter table change_notices add column if not exists handled_at timestamptz;

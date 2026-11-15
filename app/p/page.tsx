@@ -39,6 +39,7 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
   const doses = await todayDoses(c.id);
   const helpReq = await one<{ handled_by: string | null }>(`select handled_by from help_requests where circle_id = $1 and created_at > now() - interval '2 hours' order by created_at desc limit 1`, [c.id]);
   const cur = currentSlot(doses);
+  const answered = await one<{ handled_by: string; summary: string }>(`select handled_by, summary from change_notices where circle_id = $1 and ack = 'question' and handled_at > now() - interval '2 hours' order by handled_at desc limit 1`, [c.id]);
   const [changes, requests, people, visit] = await Promise.all([
     q<{ id: string; actor: string; summary: string }>('select id, actor, summary from change_notices where circle_id = $1 and ack is null order by created_at limit 3', [c.id]),
     q<{ id: string; name: string; role: string; relation: string | null }>(`select id, name, role, relation from members where circle_id = $1 and status = 'pending' and created_at > now() - interval '7 days' order by created_at`, [c.id]),
@@ -80,10 +81,10 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
           <div className="day" role="list" aria-label="Today">
             {SLOTS.map((s) => {
               const st = slotState(s);
-              return <div key={s} role="listitem" className={st === 'done' ? 'done' : st === 'now' ? 'now' : ''}>
+              return <a key={s} role="listitem" href={`/p?tab=day#slot-${s}`} aria-label={`${SLOT_LABEL[s]}: see medicines`} className={st === 'done' ? 'done' : st === 'now' ? 'now' : ''}>
                 <Icon name={st === 'done' ? 'check' : SLOT_ICON[s]} size={22} color={st === 'done' ? '#13532A' : st === 'now' ? '#1A1A1A' : '#4A4A4A'} stroke={st === 'done' ? 3 : 2.2} />
                 {st === 'now' ? 'Now' : SLOT_LABEL[s]}{st === 'none' ? <span className="sr"> (nothing)</span> : null}
-              </div>;
+              </a>;
             })}
           </div>
         )}
@@ -101,6 +102,7 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
           {helpReq && (helpReq.handled_by
             ? <div className="note n-ok" role="status" style={{ fontSize: 18 }}><b>{helpReq.handled_by} saw your Help request.</b> They are calling you.</div>
             : <div className="note n-wait" role="status" style={{ fontSize: 18 }}><b>Your family has been told.</b> They will call you.</div>)}
+          {answered && <div className="note n-ok" role="status" style={{ fontSize: 18 }}><b>{answered.handled_by} saw your question</b> about {answered.summary}. They will call you.</div>}
           {sp.asked && <div className="note n-ok" role="status" style={{ fontSize: 18 }}><b>Sent.</b> Your family will call you about it.</div>}
 
           {tab === 'now' && <>
@@ -163,10 +165,10 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
             <p className="h1">My day</p>
             {SLOTS.map((s) => {
               const ds = doses.filter((d) => d.slot === s);
-              if (!ds.length) return null;
               const st = slotState(s);
+              if (!ds.length) return <div key={s} id={`slot-${s}`} className="card"><b className="row" style={{ fontSize: 21 }}><Icon name={SLOT_ICON[s]} size={28} />{SLOT_LABEL[s]}</b><p className="body" style={{ margin: 0 }}>No medicines.</p></div>;
               return (
-                <div key={s} className="card" style={st === 'now' ? { borderColor: '#1A1A1A', borderWidth: 3 } : undefined}>
+                <div key={s} id={`slot-${s}`} className="card" style={st === 'now' ? { borderColor: '#1A1A1A', borderWidth: 3 } : undefined}>
                   <div className="between"><b className="row" style={{ fontSize: 21 }}><Icon name={SLOT_ICON[s]} size={28} />{SLOT_LABEL[s]}, {fmtTime(ds[0].due_at)}</b>
                     <span className={`chip ${st === 'done' ? 'c-ok' : st === 'now' ? 'c-wait' : st === 'skipped' ? 'c-skip' : 'c-later'}`}>{st === 'done' ? '✓ Done' : st === 'now' ? 'Now' : st === 'skipped' ? 'Some not taken' : 'Later'}</span></div>
                   {ds.map((d) => <p key={d.id} className="body" style={{ fontSize: 19 }}>{d.med.name}: take {d.qty} · {d.status === 'pending' ? FOOD_LABEL[d.med.food].toLowerCase() : d.status}</p>)}

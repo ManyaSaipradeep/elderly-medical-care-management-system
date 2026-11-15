@@ -275,3 +275,10 @@ export async function handleHelp(f: FormData) {
   if (row) await logActivity(circle.id, actorName(member), 'Responded to the Help request');
   revalidatePath('/app');
 }
+
+export async function handleQuestion(f: FormData) {
+  const { member, circle } = await requireMember();
+  const row = await one<{ summary: string }>(`update change_notices set handled_at = now(), handled_by = $3 where id = $1 and circle_id = $2 and ack = 'question' and handled_at is null returning summary`, [s(f, 'id'), circle.id, member.name]);
+  if (row) await logActivity(circle.id, actorName(member), `Answered the question about: ${row.summary}`);
+  revalidatePath('/app');
+}

@@ -1,6 +1,6 @@
 import { AuthLayout } from '@/components/AuthLayout';
 import { Steps } from '@/components/ui';
-import { signinWho } from '../../access-actions';
+import { signinWho, signinToJoin } from '../../access-actions';
 import { getTicket } from '@/lib/session';
 import { q } from '@/lib/db';
 import { redirect } from 'next/navigation';
@@ -22,6 +22,11 @@ export default async function Who() {
           </button>
         </form>
       ))}
+      <div className="card" style={{ marginTop: 8, gap: 8 }}>
+        <p className="h2" style={{ margin: 0 }}>Not on this list?</p>
+        <p className="small" style={{ margin: 0 }}>Ask to join this circle as a new family member or caretaker. The care recipient or a family organiser must approve you before you see anything.</p>
+        <form action={signinToJoin}><button className="btn out" style={{ width: '100%' }}>Ask to join as someone new</button></form>
+      </div>
     </AuthLayout>
   );
 }
