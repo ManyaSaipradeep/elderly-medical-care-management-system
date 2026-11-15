@@ -37,9 +37,9 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
   const sp = await searchParams;
   const tab = sp.tab === 'day' ? 'day' : sp.tab === 'people' ? 'people' : sp.tab === 'visits' ? 'visits' : 'now';
   const doses = await todayDoses(c.id);
-  const helpReq = await one<{ handled_by: string | null }>(`select handled_by from help_requests where circle_id = $1 and created_at > now() - interval '2 hours' order by created_at desc limit 1`, [c.id]);
+  const helpReq = await one<{ handled_by: string | null }>(`select handled_by from help_requests where circle_id = $1 and ((handled_at is null and created_at > now() - interval '2 hours') or handled_at > now() - interval '15 minutes') order by created_at desc limit 1`, [c.id]);
   const cur = currentSlot(doses);
-  const answered = await one<{ handled_by: string; summary: string }>(`select handled_by, summary from change_notices where circle_id = $1 and ack = 'question' and handled_at > now() - interval '2 hours' order by handled_at desc limit 1`, [c.id]);
+  const answered = await one<{ handled_by: string; summary: string }>(`select handled_by, summary from change_notices where circle_id = $1 and ack = 'question' and handled_at > now() - interval '15 minutes' order by handled_at desc limit 1`, [c.id]);
   const [changes, requests, people, visit] = await Promise.all([
     q<{ id: string; actor: string; summary: string }>('select id, actor, summary from change_notices where circle_id = $1 and ack is null order by created_at limit 3', [c.id]),
     q<{ id: string; name: string; role: string; relation: string | null }>(`select id, name, role, relation from members where circle_id = $1 and status = 'pending' and created_at > now() - interval '7 days' order by created_at`, [c.id]),
