@@ -51,6 +51,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 .n-ok{background:#E3F1E6;color:#13532A}
 .n-wait{background:#FBE4E2;color:#7A1A14}
 .n-warn{background:#FFF4D6;color:#6B4300}
+.n-alert{background:#FDECEA;color:#7A1A14;border:3px solid #B3261E}
 .n-info{background:#ECEDE9;color:#1A1A1A}
 .top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 6px}
 .back{display:inline-flex;align-items:center;gap:4px;font-size:17px;font-weight:700;text-decoration:none;min-height:44px}

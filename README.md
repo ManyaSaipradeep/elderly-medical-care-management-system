@@ -1,6 +1,6 @@
 # CareCircle
 
-**One simple screen for the person at the centre. Everyone who cares stays in the loop.**
+**One simple screen for the care recipient. Everyone who cares stays in the loop.**
 
 CareCircle is an elderly care and medication management web app built for the PromptWars x Catalyst hackathon by Makers Need More (MnM). The person taking the medicines sees photos of their own pills and what to take now. Family and caretakers manage schedules, track adherence and visits, and are emailed only when a dose is really missed.
 
@@ -12,7 +12,7 @@ Most reminder apps assume the person taking the medicines will set them up, read
 
 | For | Feature |
 |---|---|
-| The person at the centre | A private screen opened once with a **one-time setup link** and a **consent screen** listing who can see their medicines. **Photo pill cards** (the family's own photo of the pill *and* its strip), "Take 1 now", food timing, and three big buttons: **I took it**, **Later** (15 min), **Not today** (with their own reason). Read aloud, **Help** (asks the family to call), **My day**, and **My people**, where they **approve or refuse join requests** and remove anyone. Every medicine change appears on their screen with **OK / I have a question**. |
+| The care recipient | A private screen opened once with a **one-time setup link** and a **consent screen** listing who can see their medicines. **Photo pill cards** (the family's own photo of the pill *and* its strip), "Take 1 now", food timing, and three big buttons: **I took it**, **Later** (15 min), **Not today** (with their own reason). Read aloud, **Help** (asks the family to call), **My day**, and **My people**, where they **approve or refuse join requests** and remove anyone. Every medicine change appears on their screen with **OK / I have a question**. |
 | Caretakers | Today by morning, afternoon and night with **Given / Skipped (reason) / Undo**, last 14 days, next doctor visit, refill warnings, the person's own reasons for skipping, medicines with photos, visits and visit sheets. |
 | Family | Everything above plus **People** (approve requests, organisers, remove), **Settings** (passcode, setup link, delete circle) and **Run reminders now**. |
 | Everyone | **Two-stage escalation**: reminder 15 min before; caretaker email after 30 min with a one-tap **Mark as given**; whole circle after 60 min for important medicines only; supplements never escalate; any confirmation stops it. **Doctor visit sheet** (printable) linked from the appointment reminder email. **Refill countdown** (stock falls with each confirmed dose; email at 5 days left). |
@@ -36,7 +36,7 @@ Works on phones (bottom menu), tablets and computers (side menu), keyboard acces
 ## Security
 
 - Every server action loads the signed-in member and scopes every query by their `circle_id`; ids from the browser are never trusted. Caretakers cannot open People or Settings.
-- Join = circle code + 6-digit passcode (bcrypt) + emailed one-time code + **approval** by the person at the centre or a family organiser. Sign in again = code + passcode + emailed code.
+- Join = circle code + 6-digit passcode (bcrypt) + emailed one-time code + **approval** by the care recipient or a family organiser. Sign in again = code + passcode + emailed code.
 - 5 wrong passcodes lock the circle for 15 min and email organisers; per-IP limits on start, join and sign in.
 - The person's phone uses a random device token stored only as a SHA-256 hash; a new setup link revokes older phones. Setup links and email action links are single-use and expire (24 h / 12 h). Opening an email link never records anything; only the confirm button does.
 - Removing a member bumps their session version, signing them out everywhere.

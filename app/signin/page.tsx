@@ -19,7 +19,7 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<R
         <a href="/forgot" className="link" style={{ display: 'flex', alignItems: 'center', alignSelf: 'flex-start' }}>Forgot the passcode?</a>
         <button className="btn go" style={{ marginTop: 8 }}>Continue</button>
       </form>
-      <p className="small">The person at the centre does not sign in here. They use the setup link their family sends.</p>
+      <p className="small">The care recipient does not sign in here. They use the setup link their family sends.</p>
     </AuthLayout>
   );
 }

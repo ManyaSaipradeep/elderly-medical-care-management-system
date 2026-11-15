@@ -50,7 +50,7 @@ const MED_COLS = `json_build_object('id',m.id,'circle_id',m.circle_id,'name',m.n
 export async function dosesBetween(circleId: string, from: Date, to: Date) {
   return q<DoseWithMed>(
     `select d.*, ${MED_COLS} as med from doses d join medications m on m.id = d.med_id
-     where d.circle_id = $1 and d.due_at >= $2 and d.due_at < $3 order by d.due_at, m.importance, m.name`,
+     where d.circle_id = $1 and (m.active or d.status <> 'pending') and d.due_at >= $2 and d.due_at < $3 order by d.due_at, m.importance, m.name`,
     [circleId, from.toISOString(), to.toISOString()]);
 }
 export async function todayDoses(circleId: string) {

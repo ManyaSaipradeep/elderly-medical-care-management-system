@@ -1,6 +1,7 @@
 import { saveMedicine } from '@/app/app/actions';
 import { ErrorLine, Photo, Icon } from './ui';
 import type { Med } from '@/lib/domain';
+import { SubmitButton } from './SubmitButton';
 
 const hhmm = (t?: string) => (t ? t.slice(0, 5) : undefined);
 
@@ -65,7 +66,7 @@ export function MedForm({ med, error, personName }: { med?: Med; error: string |
       </div>
       <div className="row" style={{ justifyContent: 'flex-end', marginTop: 8, flexWrap: 'wrap' }}>
         <a className="btn out" href={med ? `/app/medicines/${med.id}` : '/app/medicines'}>Cancel</a>
-        <button className="btn go" style={{ minWidth: 200 }}>Save medicine</button>
+        <SubmitButton style={{ minWidth: 200 }}>Save medicine</SubmitButton>
       </div>
       <p className="small" style={{ textAlign: 'right' }}>{personName} is shown a notice about every change, with OK and I have a question.</p>
     </form>

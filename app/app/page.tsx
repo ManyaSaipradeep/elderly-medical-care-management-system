@@ -5,7 +5,6 @@ import { fmtTime, fmtDateTime, SLOT_LABEL, SLOTS } from '@/lib/time';
 import { Icon } from '@/components/ui';
 import { Grid14 } from '@/components/Grid14';
 import { DoseRow } from '@/components/DoseRow';
-import { AutoRefresh } from '@/components/AutoRefresh';
 import { runRemindersNow } from './actions';
 
 export default async function Today({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
@@ -29,7 +28,6 @@ export default async function Today({ searchParams }: { searchParams: Promise<Re
   const waiting = due.filter((d) => d.status === 'pending' && new Date(d.due_at).getTime() < now);
   return (
     <>
-      <AutoRefresh seconds={60} />
       {sp.denied && <div className="note n-warn">Only family organisers can open that page.</div>}
       {sp.ran && <div className="note n-ok" role="status">Reminders checked. Any emails due were sent (see Outbox if email is not set up).</div>}
       {pending.map((p) => (
@@ -40,7 +38,7 @@ export default async function Today({ searchParams }: { searchParams: Promise<Re
           <p className="h1">Let&apos;s set up {who}&apos;s medicines</p>
           <div className="cols two">
             <a className="card" href="/app/medicines/new" style={{ textDecoration: 'none' }}><b style={{ fontSize: 18 }}>1. Add their medicines</b><span className="small">With a photo of each pill and strip</span></a>
-            {member.is_organiser && <a className="card" href="/app/setup" style={{ textDecoration: 'none' }}><b style={{ fontSize: 18 }}>2. Set up {who}&apos;s phone</b><span className="small">A one-time link, no password for them</span></a>}
+            {member.is_organiser && <a className="card" href="/app/setup" style={{ textDecoration: 'none' }}><b style={{ fontSize: 18 }}>2. Set up {who}&apos;s phone</b><span className="small">A one-time link. They never need a password.</span></a>}
           </div>
         </div>
       )}

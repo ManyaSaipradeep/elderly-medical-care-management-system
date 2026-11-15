@@ -182,3 +182,21 @@ create table if not exists rate_limits (
   count      int not null,
   window_end timestamptz not null
 );
+
+-- v2: one active medicine per name per circle. Older duplicates are stopped (history kept).
+update medications m set active = false, stopped_reason = 'Duplicate entry'
+ where m.active and exists (select 1 from medications o where o.circle_id = m.circle_id and o.active
+   and lower(o.name) = lower(m.name) and (o.created_at, o.id) < (m.created_at, m.id));
+delete from doses d using medications m where d.med_id = m.id and not m.active and d.status = 'pending';
+create unique index if not exists medications_one_active_name on medications (circle_id, lower(name)) where active;
+
+-- v2: Help presses shown inside the app until someone responds.
+create table if not exists help_requests (
+  id          uuid primary key default gen_random_uuid(),
+  circle_id   uuid not null references circles(id) on delete cascade,
+  created_at  timestamptz not null default now(),
+  handled_at  timestamptz,
+  handled_by  text check (handled_by is null or length(handled_by) <= 80),
+  check ((handled_at is null) = (handled_by is null))
+);
+create index if not exists help_open on help_requests (circle_id) where handled_at is null;

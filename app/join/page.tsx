@@ -9,7 +9,7 @@ export default async function Join({ searchParams }: { searchParams: Promise<Rec
   return (
     <AuthLayout topRight={<a className="btn out sm" href="/signin">Sign in</a>} side={<>
       <p style={{ fontSize: 26, fontWeight: 700 }}>Joining a circle</p><Steps labels={JOIN_STEPS} current={0} />
-      <p style={{ color: '#BFC2BA', marginTop: 'auto' }}>The person at the centre or a family organiser approves every new member. You see nothing until then.</p>
+      <p style={{ color: '#BFC2BA', marginTop: 'auto' }}>The care recipient or a family organiser approves every new member. You see nothing until then.</p>
     </>}>
       <h1 className="h1">Ask to join a circle</h1>
       <p className="lead">For family members and caretakers.</p>
@@ -17,7 +17,7 @@ export default async function Join({ searchParams }: { searchParams: Promise<Rec
       <form action={joinCheck}>
         <Field label="Circle code" name="code" required maxLength={6} autoComplete="off" />
         <Field label="Passcode" name="passcode" type="password" inputMode="numeric" maxLength={6} code required autoComplete="off" />
-        <div className="note n-info" style={{ marginTop: 8 }}><b>Are you the person at the centre?</b> You do not need a code. Ask your family for a setup link to open on your phone.</div>
+        <div className="note n-info" style={{ marginTop: 8 }}><b>Are you the care recipient?</b> You do not need a code. Ask your family for a setup link to open on your phone.</div>
         <button className="btn go" style={{ marginTop: 12 }}>Next</button>
       </form>
     </AuthLayout>

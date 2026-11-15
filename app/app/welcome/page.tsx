@@ -13,7 +13,7 @@ export default async function Welcome() {
       <p className="sect">Next</p>
       <div className="cols two">
         <a className="card" href="/app/medicines/new" style={{ textDecoration: 'none' }}><b style={{ fontSize: 18 }}>1. Add {who}&apos;s medicines</b><span className="small">Have the strips and the prescription nearby.</span></a>
-        {member.is_organiser && <a className="card" href="/app/setup" style={{ textDecoration: 'none' }}><b style={{ fontSize: 18 }}>2. Set up {who}&apos;s phone</b><span className="small">A one-time setup link. No password for them.</span></a>}
+        {member.is_organiser && <a className="card" href="/app/setup" style={{ textDecoration: 'none' }}><b style={{ fontSize: 18 }}>2. Set up {who}&apos;s phone</b><span className="small">A one-time setup link. They never need a password.</span></a>}
       </div>
       <a className="btn go" href="/app" style={{ alignSelf: 'flex-start' }}>Go to today</a>
     </>

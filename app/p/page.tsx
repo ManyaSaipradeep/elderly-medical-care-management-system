@@ -37,6 +37,7 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
   const sp = await searchParams;
   const tab = sp.tab === 'day' ? 'day' : sp.tab === 'people' ? 'people' : 'now';
   const doses = await todayDoses(c.id);
+  const helpReq = await one<{ handled_by: string | null }>(`select handled_by from help_requests where circle_id = $1 and created_at > now() - interval '2 hours' order by created_at desc limit 1`, [c.id]);
   const cur = currentSlot(doses);
   const [changes, requests, people, visit] = await Promise.all([
     q<{ id: string; actor: string; summary: string }>('select id, actor, summary from change_notices where circle_id = $1 and ack is null order by created_at limit 3', [c.id]),
@@ -92,12 +93,14 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
             <div className="card" role="dialog" aria-label="Ask for help" style={{ borderColor: '#B3261E', borderWidth: 3 }}>
               <p className="h1">Ask your family to call you?</p>
               <p className="body" style={{ fontSize: 19 }}>Everyone in your circle gets a message straight away.</p>
-              <form action={askHelp}><button className="btn alert big" style={{ width: '100%' }}><Icon name="phone" size={28} color="#FFFFFF" stroke={2.4} />Yes, ask them to call</button></form>
+              <form action={askHelp}><button className="btn alert big" style={{ width: '100%' }}><Icon name="phone" size={28} color="#FFFFFF" stroke={2.4} />Yes, ask my family to call</button></form>
               <a className="btn mid" href="/p">No, I am fine</a>
               <p className="small" style={{ fontSize: 16 }}>In an emergency, call 112.</p>
             </div>
           )}
-          {sp.help && <div className="note n-wait" role="status" style={{ fontSize: 18 }}><b>Your family has been told.</b> They will call you.</div>}
+          {helpReq && (helpReq.handled_by
+            ? <div className="note n-ok" role="status" style={{ fontSize: 18 }}><b>{helpReq.handled_by} saw your Help request.</b> They are calling you.</div>
+            : <div className="note n-wait" role="status" style={{ fontSize: 18 }}><b>Your family has been told.</b> They will call you.</div>)}
           {sp.asked && <div className="note n-ok" role="status" style={{ fontSize: 18 }}><b>Sent.</b> Your family will call you about it.</div>}
 
           {tab === 'now' && <>

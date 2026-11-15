@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from 'next';
 
 export const metadata: Metadata = {
   title: 'CareCircle: medicines made simple, together',
-  description: 'One simple screen for the person at the centre. Family and caretakers stay in the loop.',
+  description: 'One simple screen for the care recipient. Family and caretakers stay in the loop.',
   manifest: '/manifest.webmanifest',
 };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#F2A900' };

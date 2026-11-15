@@ -8,7 +8,7 @@ import { actOnDoses, undoDoses, recipients, circleLabel, displayName, ensureDose
 import { savePhoto } from '@/lib/photos';
 import { sendMail, layout, esc, APP_URL } from '@/lib/mail';
 import { hashSecret, checkSecret, isWeakPasscode, randomToken, sha256 } from '@/lib/crypto';
-import { atLocal } from '@/lib/time';
+import { atLocal, startOfLocalDay, localDate } from '@/lib/time';
 import { runTick } from '@/lib/tick';
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? '').trim();
@@ -52,6 +52,8 @@ export async function saveMedicine(f: FormData) {
   if (pill === 'invalid' || strip === 'invalid') redirect(`${where}?e=photo`);
   const who = actorName(member);
   const pattern = `${m.n_morning}-${m.n_afternoon}-${m.n_night}`;
+  const dup = await one(`select 1 from medications where circle_id = $1 and active and lower(name) = lower($2) and id::text <> $3`, [circle.id, m.name, id || '']);
+  if (dup) redirect(`${where}?e=med_dup`);
   let medId = id;
   if (id) {
     const prev = await one<{ name: string; n_morning: number; n_afternoon: number; n_night: number }>('select * from medications where id = $1 and circle_id = $2 and active', [id, circle.id]);
@@ -62,7 +64,7 @@ export async function saveMedicine(f: FormData) {
         refill_alerted_on=null, updated_at=now() where id=$1 and circle_id=$2`,
       [id, circle.id, m.name, m.purpose ?? null, m.n_morning, m.n_afternoon, m.n_night, m.t_morning, m.t_afternoon, m.t_night, m.food, m.importance, m.stock, pill, strip]);
     // Upcoming open doses follow the new schedule; history stays.
-    await q(`delete from doses where med_id = $1 and status = 'pending' and due_at > now() and notified_level = 0`, [id]);
+    await q(`delete from doses where med_id = $1 and status = 'pending' and due_at >= $2`, [id, startOfLocalDay(localDate()).toISOString()]);
     const prevPattern = `${prev.n_morning}-${prev.n_afternoon}-${prev.n_night}`;
     const summary = prevPattern !== pattern ? `${m.name}: now ${pattern} (was ${prevPattern})` : `${m.name}: details updated`;
     await q('insert into change_notices (circle_id, actor, summary) values ($1,$2,$3)', [circle.id, member.name, summary]);
@@ -106,7 +108,7 @@ export async function stopMedicine(f: FormData) {
   const reason = s(f, 'reason').slice(0, 200) || 'No reason given';
   const row = await one<{ name: string }>('update medications set active = false, stopped_reason = $3, updated_at = now() where id = $1 and circle_id = $2 and active returning name', [s(f, 'id'), circle.id, reason]);
   if (row) {
-    await q(`delete from doses where med_id = $1 and status = 'pending' and due_at > now()`, [s(f, 'id')]);
+    await q(`delete from doses where med_id = $1 and status = 'pending'`, [s(f, 'id')]);
     const summary = `${row.name} stopped: ${reason}`;
     await q('insert into change_notices (circle_id, actor, summary) values ($1,$2,$3)', [circle.id, member.name, summary]);
     await logActivity(circle.id, actorName(member), `Stopped ${summary}`);
@@ -183,7 +185,7 @@ export async function createSetupLink() {
   const token = randomToken();
   await q(`update setup_links set expires_at = now() where circle_id = $1 and used_at is null and expires_at > now()`, [circle.id]);
   await q(`insert into setup_links (circle_id, token_hash, expires_at, created_by) values ($1,$2, now() + interval '24 hours', $3)`, [circle.id, sha256(token), member.name]);
-  await logActivity(circle.id, actorName(member), 'Made a new setup link for the phone of the person at the centre');
+  await logActivity(circle.id, actorName(member), "Made a new setup link for the care recipient's phone");
   // The raw token is shown once, to the organiser, via a short-lived cookie read by the page.
   const { setTicket } = await import('@/lib/session');
   await setTicket('setup', { token }, 60 * 60 * 24);
@@ -205,7 +207,7 @@ export async function emailSetupLink() {
 export async function stopPersonDevices() {
   const { member, circle } = await requireMember({ organiser: true });
   await q('update person_devices set revoked_at = now() where circle_id = $1 and revoked_at is null', [circle.id]);
-  await logActivity(circle.id, actorName(member), 'Signed out the phone of the person at the centre');
+  await logActivity(circle.id, actorName(member), "Signed out the care recipient's phone");
   redirect('/app/setup?stopped=1');
 }
 
@@ -266,3 +268,10 @@ export async function runRemindersNow() {
   redirect('/app?ran=1');
 }
 
+
+export async function handleHelp(f: FormData) {
+  const { member, circle } = await requireMember();
+  const row = await one(`update help_requests set handled_at = now(), handled_by = $3 where id = $1 and circle_id = $2 and handled_at is null returning id`, [s(f, 'id'), circle.id, member.name]);
+  if (row) await logActivity(circle.id, actorName(member), 'Responded to the Help request');
+  revalidatePath('/app');
+}

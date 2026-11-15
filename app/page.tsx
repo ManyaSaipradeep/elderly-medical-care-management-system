@@ -22,9 +22,9 @@ export default async function Home() {
       <main id="main">
         <section style={{ maxWidth: 1160, margin: '0 auto', padding: '48px 20px 40px', display: 'flex', flexWrap: 'wrap', gap: 44, alignItems: 'center' }}>
           <div style={{ flex: '999 1 440px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 18 }}>
-            <h1 style={{ margin: 0, fontSize: 'clamp(34px, 5vw, 50px)', lineHeight: 1.1, maxWidth: 640 }}>One simple screen for them. Everyone who cares stays in the loop.</h1>
+            <h1 style={{ margin: 0, fontSize: 'clamp(34px, 5vw, 50px)', lineHeight: 1.1, maxWidth: 640 }}>One simple screen for the person taking the medicines. Everyone who cares stays in the loop.</h1>
             <p style={{ margin: 0, fontSize: 21, color: '#4A4A4A', maxWidth: 600 }}>
-              The person at the centre sees photos of their own tablets and what to take now. Family and caretakers manage the rest, and hear only when a dose is really missed.
+              The care recipient sees photos of their own tablets and what to take now. Family and caretakers manage the rest, and hear only when a dose is really missed.
             </p>
             <div className="row" style={{ flexWrap: 'wrap' }}>
               <a className="btn go" href="/start" style={{ fontSize: 20 }}>Start a care circle</a>
@@ -54,7 +54,7 @@ export default async function Home() {
             <h2 style={{ margin: 0, fontSize: 30 }}>Everyone gets the view they need</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: 28 }}>
               {[
-                ['home', 'The person at the centre', 'Their own phone, opened once with a setup link. Big photos of each pill and strip, three buttons, and Help always in reach. They approve who joins and see every change.'],
+                ['home', 'Care recipient', 'Their own phone, opened once with a setup link. Big photos of each pill and strip, three buttons, and Help always in reach. They approve who joins and see every change.'],
                 ['pill', 'Caretakers', 'Today by morning, afternoon and night. Tap Given, add medicines with two photos, see the last 14 days and the next doctor visit.'],
                 ['people', 'Family', 'The same picture from anywhere, reasons for skipped doses in their own words, refill warnings, and a visit sheet for every appointment.'],
               ].map(([i, t, d]) => (
@@ -65,7 +65,7 @@ export default async function Home() {
         </section>
         <section style={{ maxWidth: 1160, margin: '0 auto', padding: '44px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(420px, 100%), 1fr))', gap: 36 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}><h2 style={{ margin: 0, fontSize: 28 }}>Alerts that know when to stay quiet</h2><p style={{ margin: 0, color: '#4A4A4A' }}>A reminder 15 minutes before each dose. If nobody confirms within 30 minutes, the caretaker gets an email with a Mark as given button. Only an important medicine still waiting after an hour reaches the whole family. Vitamins never raise an alarm.</p></div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}><h2 style={{ margin: 0, fontSize: 28 }}>Private, and their decision</h2><p style={{ margin: 0, color: '#4A4A4A' }}>Joining needs the circle code, the passcode, an email check and approval. Photos are private with location data removed. The person at the centre can remove anyone, and the circle can be deleted with every photo.</p></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}><h2 style={{ margin: 0, fontSize: 28 }}>Private, and their decision</h2><p style={{ margin: 0, color: '#4A4A4A' }}>Joining needs the circle code, the passcode, an email check and approval. Photos are private with location data removed. The care recipient can remove anyone, and the circle can be deleted with every photo.</p></div>
         </section>
       </main>
       <footer style={{ borderTop: '2px solid #C9CCC4', background: '#FFFFFF' }}>

@@ -40,6 +40,7 @@ export async function undo(f: FormData) {
 }
 export async function askHelp() {
   const c = await person();
+  await q(`insert into help_requests (circle_id) select $1 where not exists (select 1 from help_requests where circle_id = $1 and handled_at is null)`, [c.id]);
   // At most one help email every 10 minutes, so a repeated tap does not flood the family.
   const ok = await one(`update circles set last_help_at = now() where id = $1 and (last_help_at is null or last_help_at < now() - interval '10 minutes') returning id`, [c.id]);
   if (ok) {

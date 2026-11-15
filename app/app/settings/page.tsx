@@ -2,6 +2,7 @@ import { requireMember } from '@/lib/session';
 import { ErrorLine } from '@/components/ui';
 import { msg } from '@/lib/errors';
 import { changePasscode, deleteCircle } from '../actions';
+import { PasscodePair } from '@/components/PasscodePair';
 
 export default async function Settings({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const { circle } = await requireMember({ organiser: true });
@@ -22,8 +23,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
         <form action={changePasscode} className="card">
           <p className="h2">Change passcode</p>
           <label className="lbl" htmlFor="current">Current passcode</label><input id="current" name="current" type="password" inputMode="numeric" maxLength={6} className="in code" required />
-          <label className="lbl" htmlFor="passcode">New passcode</label><input id="passcode" name="passcode" type="password" inputMode="numeric" maxLength={6} className="in code" required />
-          <label className="lbl" htmlFor="passcode2">Type it again</label><input id="passcode2" name="passcode2" type="password" inputMode="numeric" maxLength={6} className="in code" required />
+          <PasscodePair label="New passcode" />
           <p className="small">People already signed in stay signed in. New joins need the new passcode.</p>
           <button className="btn go">Change passcode</button>
         </form>

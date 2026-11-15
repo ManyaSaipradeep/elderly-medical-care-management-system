@@ -13,6 +13,7 @@ export const MESSAGES: Record<string, string> = {
   pass_len: 'The passcode must be exactly 6 digits.',
   exists: 'That email already has a request or membership in this circle.',
   photo: 'Use a JPG, PNG or WebP photo under 5 MB.',
+  med_dup: 'This medicine is already on the list. Open it and edit it instead.',
   med_none: 'Add at least one dose: morning, afternoon or night.',
   confirm_name: 'Type the name exactly to confirm.',
   denied: 'Only family organisers can do that.',
