@@ -211,3 +211,8 @@ form{display:flex;flex-direction:column;gap:6px;margin:0}
 .day a:hover{border-color:#1A1A1A}
 .day a:focus-visible{outline:3px solid #1A1A1A;outline-offset:2px}
 .card:target{border-color:#1A1A1A;border-width:3px}
+
+.stock-custom{display:flex;flex-direction:column;gap:6px;margin:0}
+.stock-custom .lbl{margin:4px 0 0}
+.stock-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:8px}
+.stock-row .in,.stock-row .btn{min-height:50px;height:50px;border-radius:12px}

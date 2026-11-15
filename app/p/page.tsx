@@ -35,7 +35,7 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
     return <Centered><Logo size={64} /><h1 className="h1" style={{ fontSize: 30 }}>This screen is not set up</h1><p className="body" style={{ fontSize: 20 }}>Ask your family for a setup link to open on this phone.</p></Centered>;
   }
   const sp = await searchParams;
-  const tab = sp.tab === 'day' ? 'day' : sp.tab === 'people' ? 'people' : 'now';
+  const tab = sp.tab === 'day' ? 'day' : sp.tab === 'people' ? 'people' : sp.tab === 'visits' ? 'visits' : 'now';
   const doses = await todayDoses(c.id);
   const helpReq = await one<{ handled_by: string | null }>(`select handled_by from help_requests where circle_id = $1 and created_at > now() - interval '2 hours' order by created_at desc limit 1`, [c.id]);
   const cur = currentSlot(doses);
@@ -57,12 +57,16 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
   const doneIds = (sp.ids || '').split(',').filter((x) => /^[0-9a-f-]{36}$/.test(x));
   const showDone = !!sp.done && doneIds.length > 0 && tab === 'now';
   const ids = cur ? cur.doses.filter((d) => d.status === 'pending').map((d) => d.id).join(',') : '';
-  const snoozed = cur?.doses.some((d) => d.snoozed_until && new Date(d.snoozed_until).getTime() > Date.now());
+  const snoozeEnd = cur?.doses.reduce<number>((mx, d) => (d.status === 'pending' && d.snoozed_until ? Math.max(mx, new Date(d.snoozed_until).getTime()) : mx), 0) ?? 0;
+  const snoozed = snoozeEnd > Date.now();
+  const resting = snoozed && !sp.show; // after Later: hide the medicines until the reminder time
+  const visits = tab === 'visits' ? await q<{ id: string; doctor: string; at: string; location: string | null }>(`select id, doctor, at, location from appointments where circle_id = $1 and at > now() - interval '30 days' order by at`, [c.id]) : [];
   const next = doses.find((d) => d.status === 'pending' && (!cur || d.due_at !== cur.due_at));
   const speech = cur ? `${SLOT_LABEL[cur.slot]} medicines. ${cur.doses.filter((d) => d.status === 'pending').map((d) => `${d.med.name}: take ${d.qty}, ${FOOD_LABEL[d.med.food]}.`).join(' ')}` : 'Nothing to take right now.';
   const nav = [
     { t: 'now', href: '/p', icon: 'home', label: 'Now' },
     { t: 'day', href: '/p?tab=day', icon: 'list', label: 'My day' },
+    { t: 'visits', href: '/p?tab=visits', icon: 'cal', label: 'My visits' },
     { t: 'people', href: '/p?tab=people', icon: 'people', label: requests.length ? `My people (${requests.length})` : 'My people' },
   ];
   return (
@@ -132,13 +136,21 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
                   <p className="h1" style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Icon name={SLOT_ICON[cur.slot]} size={32} />{SLOT_LABEL[cur.slot]} medicines, {fmtTime(cur.due_at)}</p>
                   <ReadAloud text={speech} />
                 </div>
-                {snoozed && <div className="note n-info" style={{ fontSize: 18 }}>I will remind you again soon. Nobody is told while you wait.</div>}
+                {resting ? (
+                  <div className="card" style={{ alignItems: 'center', textAlign: 'center', padding: '26px 16px', gap: 10 }}>
+                    <Icon name="clock" size={44} />
+                    <p className="h1" style={{ margin: 0 }}>I will remind you at {fmtTime(new Date(snoozeEnd))}</p>
+                    <p className="body" style={{ fontSize: 19, margin: 0 }}>Nobody is told while you wait.</p>
+                    <a className="btn out" href="/p?show=1">Take them now instead</a>
+                  </div>
+                ) : <>
                 <div className="person-cards">
                   {cur.doses.filter((d) => d.status === 'pending').map((d) => <PillCard key={d.id} d={d} />)}
                 </div>
                 {cur.doses.filter((d) => d.status !== 'pending').map((d) => (
                   <div key={d.id} className="card" style={{ borderStyle: 'dashed' }}><div className="row"><Icon name="check" size={26} color="#13532A" stroke={3} /><p className="body">{d.med.name}: {d.status === 'taken' ? `taken${d.acted_by ? ` (${d.acted_by})` : ''}` : d.status}</p></div></div>
                 ))}
+                </>}
               </>
             ) : (
               <div className="card" style={{ padding: '24px 18px' }}>
@@ -179,6 +191,22 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
             {visit && <div className="card"><div className="row"><Icon name="cal" size={30} /><p className="body" style={{ fontSize: 19 }}><b>Doctor visit:</b> {visit.doctor}, {fmtDateTime(visit.at)}</p></div></div>}
           </>}
 
+          {tab === 'visits' && <>
+            <p className="h1">My doctor visits</p>
+            {!visits.length && <div className="card"><p className="body" style={{ fontSize: 19, margin: 0 }}>No visits planned. Your family adds them.</p></div>}
+            {visits.map((v) => {
+              const past = new Date(v.at).getTime() < Date.now();
+              return (
+                <a key={v.id} className="card" href={`/p/visit/${v.id}`} style={{ textDecoration: 'none', color: 'inherit', opacity: past ? 0.75 : 1 }}>
+                  <div className="row"><Icon name="cal" size={30} /><div>
+                    <p className="body" style={{ fontSize: 20, margin: 0 }}><b>{v.doctor}</b></p>
+                    <p className="body" style={{ margin: 0 }}>{fmtDateTime(v.at)}{v.location ? `, ${v.location}` : ''}{past ? ' (past)' : ''}</p>
+                  </div></div>
+                  <span className="btn out sm" style={{ alignSelf: 'flex-start' }}>Open visit sheet</span>
+                </a>
+              );
+            })}
+          </>}
           {tab === 'people' && <>
             <p className="h1">My people</p>
             <p className="lead" style={{ fontSize: 19 }}>These people can see your medicines. You decide who is here.</p>
@@ -203,7 +231,7 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
             ))}
           </>}
         </main>
-        {tab === 'now' && cur && !showDone && !sp.reasons && (
+        {tab === 'now' && cur && !showDone && !sp.reasons && !resting && (
           <div className="person-acts">
             <form action={take} className="big"><input type="hidden" name="ids" value={ids} /><button className="btn go big" style={{ width: '100%' }}><Icon name="check" size={30} color="#FFFFFF" stroke={3} />I took {cur.doses.filter((d) => d.status === 'pending').length > 1 ? 'them' : 'it'}</button></form>
             <form action={snooze}><input type="hidden" name="ids" value={ids} /><button className="btn mid" style={{ width: '100%', minHeight: 64 }}>Later</button></form>
@@ -211,7 +239,7 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
           </div>
         )}
         <div className="pnav-wrap">
-          <nav className="nav pnav" aria-label="Main" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+          <nav className="nav pnav" aria-label="Main" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
             {nav.map((n) => <a key={n.t} href={n.href} className={tab === n.t ? 'on' : ''} aria-current={tab === n.t ? 'page' : undefined}><Icon name={n.icon} size={26} color={tab === n.t ? '#1A1A1A' : '#4A4A4A'} />{n.label}</a>)}
           </nav>
         </div>
