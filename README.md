@@ -55,12 +55,23 @@ DATABASE_URL=... npm run db:seed  # optional demo circle with 14 days of history
 npm run dev
 ```
 
+## Demo mode (how the live demo runs)
+
+The hosted demo runs **without an email account**, on purpose. With `DEMO_OUTBOX=1` and no Gmail credentials:
+
+- **Every email is still created** (reminders, escalations, Help requests, join approvals, medicine changes, visit and refill notices) and stored in the `outbox` table.
+- Organisers can read them all at **Settings → Outbox**, so you can see exactly who would be emailed, when and why.
+- **Sign-in and join codes appear on screen**, labelled "Demo mode", instead of arriving by email.
+- **Help requests** and join requests also show **inside the app**, so the core alerts work without email.
+
+This is for evaluation only, with sample data. Because codes show on screen, anyone with the circle code and passcode can sign in. For real use, set `GMAIL_USER` and `GMAIL_APP_PASSWORD` (a Google app password): codes are then sent only by email and never shown. Set `DEMO_OUTBOX=0` to hide the Outbox page.
+
 ## Deploy
 
-**Vercel + Neon (fastest)**
-1. Create a free Postgres on neon.tech; run `npm run db:migrate` (and optionally `db:seed`) against it.
-2. Import the repo in Vercel; set `DATABASE_URL`, `SESSION_SECRET`, `CRON_SECRET`, `APP_URL` (your Vercel URL), `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `DEMO_OUTBOX`.
-3. Vercel's free cron runs only daily, so create a cron-job.org job: `POST https://YOUR-APP/api/cron/tick` every 5 minutes with header `x-cron-secret: <CRON_SECRET>`.
+**Vercel + Supabase (what this project uses)**
+1. In Supabase, open **Connect → Connection string → Transaction pooler** (port 6543) and add `?sslmode=require` to the end. Run `npm run db:migrate` (and optionally `npm run db:seed`) with it as `DATABASE_URL`.
+2. Import the repo in Vercel and set `DATABASE_URL`, `SESSION_SECRET` (32+ random characters), `CRON_SECRET`, `APP_URL` (your Vercel URL, no trailing slash) and `DEMO_OUTBOX=1`. Add `GMAIL_USER` and `GMAIL_APP_PASSWORD` only if you want real emails.
+3. Vercel's free cron runs only once a day, so create a cron-job.org job: `POST https://YOUR-APP/api/cron/tick` every 5 minutes with header `x-cron-secret: <CRON_SECRET>`.
 
 **Google Cloud Run**
 ```bash
