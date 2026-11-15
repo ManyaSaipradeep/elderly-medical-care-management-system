@@ -59,6 +59,8 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
   const ids = cur ? cur.doses.filter((d) => d.status === 'pending').map((d) => d.id).join(',') : '';
   const snoozeEnd = cur?.doses.reduce<number>((mx, d) => (d.status === 'pending' && d.snoozed_until ? Math.max(mx, new Date(d.snoozed_until).getTime()) : mx), 0) ?? 0;
   const snoozed = snoozeEnd > Date.now();
+  const viewSlot = (SLOTS as readonly string[]).includes(sp.slot) && sp.slot !== cur?.slot ? (sp.slot as Slot) : null; // looking at another time of day
+  const viewDoses = viewSlot ? doses.filter((d) => d.slot === viewSlot) : [];
   const resting = snoozed && !sp.show; // after Later: hide the medicines until the reminder time
   const visits = tab === 'visits' ? await q<{ id: string; doctor: string; at: string; location: string | null }>(`select id, doctor, at, location from appointments where circle_id = $1 and at > now() - interval '30 days' order by at`, [c.id]) : [];
   const next = doses.find((d) => d.status === 'pending' && (!cur || d.due_at !== cur.due_at));
@@ -85,7 +87,8 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
           <div className="day" role="list" aria-label="Today">
             {SLOTS.map((s) => {
               const st = slotState(s);
-              return <a key={s} role="listitem" href={`/p?tab=day#slot-${s}`} aria-label={`${SLOT_LABEL[s]}: see medicines`} className={st === 'done' ? 'done' : st === 'now' ? 'now' : ''}>
+              const sel = viewSlot ? viewSlot === s : st === 'now';
+              return <a key={s} role="listitem" href={st === 'now' ? '/p' : `/p?slot=${s}`} aria-label={`${SLOT_LABEL[s]}: see medicines`} aria-current={sel ? 'true' : undefined} className={[st === 'done' ? 'done' : st === 'now' ? 'now' : '', sel ? 'sel' : ''].join(' ')}>
                 <Icon name={st === 'done' ? 'check' : SLOT_ICON[s]} size={22} color={st === 'done' ? '#13532A' : st === 'now' ? '#1A1A1A' : '#4A4A4A'} stroke={st === 'done' ? 3 : 2.2} />
                 {st === 'now' ? 'Now' : SLOT_LABEL[s]}{st === 'none' ? <span className="sr"> (nothing)</span> : null}
               </a>;
@@ -110,7 +113,28 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
           {sp.asked && <div className="note n-ok" role="status" style={{ fontSize: 18 }}><b>Sent.</b> Your family will call you about it.</div>}
 
           {tab === 'now' && <>
-            {showDone ? (
+            {viewSlot ? (() => {
+              const pending = viewDoses.filter((d) => d.status === 'pending');
+              const first = viewDoses[0];
+              const future = first && new Date(first.due_at).getTime() > Date.now();
+              const say = `${SLOT_LABEL[viewSlot]} medicines. ${pending.map((d) => `${d.med.name}: take ${d.qty}, ${FOOD_LABEL[d.med.food]}.`).join(' ')}`;
+              return (
+                <>
+                  <div className="between" style={{ flexWrap: 'wrap' }}>
+                    <p className="h1" style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Icon name={SLOT_ICON[viewSlot]} size={32} />{SLOT_LABEL[viewSlot]} medicines{first ? `, ${fmtTime(first.due_at)}` : ''}</p>
+                    {pending.length > 0 && <ReadAloud text={say} />}
+                  </div>
+                  {!first ? <div className="card"><p className="body" style={{ fontSize: 19, margin: 0 }}>No medicines in the {SLOT_LABEL[viewSlot].toLowerCase()}.</p></div>
+                    : future && pending.length ? <div className="note n-info" style={{ fontSize: 18 }}>Not time yet. The buttons appear here at {fmtTime(first.due_at)}.</div>
+                    : !pending.length ? <div className="note n-ok" style={{ fontSize: 18 }}><b>All done</b> for the {SLOT_LABEL[viewSlot].toLowerCase()}.</div> : null}
+                  {pending.length > 0 && <div className="person-cards">{pending.map((d) => <PillCard key={d.id} d={d} />)}</div>}
+                  {viewDoses.filter((d) => d.status !== 'pending').map((d) => (
+                    <div key={d.id} className="card" style={{ borderStyle: 'dashed' }}><div className="row"><Icon name="check" size={26} color="#13532A" stroke={3} /><p className="body">{d.med.name}: {d.status === 'taken' ? `taken${d.acted_by ? ` (${d.acted_by})` : ''}` : d.status}</p></div></div>
+                  ))}
+                  <a className="btn out" href="/p">{cur ? 'Back to what to take now' : 'Back'}</a>
+                </>
+              );
+            })() : showDone ? (
               <>
                 <div className="card" style={{ background: sp.done === 'taken' ? '#E3F1E6' : '#FFF4D6', borderColor: 'transparent', alignItems: 'center', textAlign: 'center', padding: '26px 16px' }}>
                   <span style={{ width: 84, height: 84, borderRadius: 999, background: sp.done === 'taken' ? '#1B6B35' : '#6B4300', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="check" size={46} color="#FFFFFF" stroke={3} /></span>
@@ -174,7 +198,11 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
           </>}
 
           {tab === 'day' && <>
-            <p className="h1">My day</p>
+            <div className="between" style={{ flexWrap: 'wrap', gap: 10 }}>
+              <p className="h1" style={{ margin: 0 }}>My day</p>
+              <a className="btn out" href="/p/add">Add a medicine</a>
+            </div>
+            {sp.added && <div className="note n-ok" role="status" style={{ fontSize: 18 }}><b>Added.</b> Your family has been told and can help set the exact times.</div>}
             {SLOTS.map((s) => {
               const ds = doses.filter((d) => d.slot === s);
               const st = slotState(s);
@@ -231,7 +259,7 @@ export default async function PersonScreen({ searchParams }: { searchParams: Pro
             ))}
           </>}
         </main>
-        {tab === 'now' && cur && !showDone && !sp.reasons && !resting && (
+        {tab === 'now' && cur && !viewSlot && !showDone && !sp.reasons && !resting && (
           <div className="person-acts">
             <form action={take} className="big"><input type="hidden" name="ids" value={ids} /><button className="btn go big" style={{ width: '100%' }}><Icon name="check" size={30} color="#FFFFFF" stroke={3} />I took {cur.doses.filter((d) => d.status === 'pending').length > 1 ? 'them' : 'it'}</button></form>
             <form action={snooze}><input type="hidden" name="ids" value={ids} /><button className="btn mid" style={{ width: '100%', minHeight: 64 }}>Later</button></form>
