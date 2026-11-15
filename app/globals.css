@@ -216,3 +216,4 @@ form{display:flex;flex-direction:column;gap:6px;margin:0}
 .stock-custom .lbl{margin:4px 0 0}
 .stock-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:8px}
 .stock-row .in,.stock-row .btn{min-height:50px;height:50px;border-radius:12px}
+.day a.sel{border-color:#1A1A1A;border-width:3px}

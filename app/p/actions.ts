@@ -2,7 +2,9 @@
 import { redirect } from 'next/navigation';
 import { q, one, logActivity } from '@/lib/db';
 import { currentPerson } from '@/lib/session';
-import { actOnDoses, undoDoses, recipients, circleLabel, displayName } from '@/lib/domain';
+import { actOnDoses, undoDoses, recipients, circleLabel, displayName, ensureDoses } from '@/lib/domain';
+import { savePhoto } from '@/lib/photos';
+import { z } from 'zod';
 import { sendMail, layout, esc, APP_URL } from '@/lib/mail';
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? '').trim();
@@ -96,4 +98,38 @@ export async function removePerson(f: FormData) {
     }));
   }
   redirect('/p?tab=people');
+}
+
+const ownMed = z.object({
+  name: z.string().trim().min(1).max(80), purpose: z.string().trim().max(80).optional(),
+  n_morning: z.coerce.number().int().min(0).max(4), n_afternoon: z.coerce.number().int().min(0).max(4), n_night: z.coerce.number().int().min(0).max(4),
+  food: z.enum(['before', 'after', 'with', 'any']), stock: z.coerce.number().int().min(0).max(10000),
+});
+
+/** The care recipient adds a medicine themselves. Usual times are used; the family can adjust them. Everyone is told. */
+export async function addOwnMedicine(f: FormData) {
+  const c = await person();
+  const parsed = ownMed.safeParse(Object.fromEntries(['name', 'purpose', 'n_morning', 'n_afternoon', 'n_night', 'food', 'stock'].map((k) => [k, s(f, k) || undefined])));
+  if (!parsed.success) redirect('/p/add?e=fields');
+  const m = parsed.data;
+  if (m.n_morning + m.n_afternoon + m.n_night === 0) redirect('/p/add?e=med_none');
+  const dup = await one(`select 1 from medications where circle_id = $1 and active and lower(name) = lower($2)`, [c.id, m.name]);
+  if (dup) redirect('/p/add?e=med_dup');
+  const pill = await savePhoto(c.id, f.get('pill'));
+  const strip = await savePhoto(c.id, f.get('strip'));
+  if (pill === 'invalid' || strip === 'invalid') redirect('/p/add?e=photo');
+  await q(
+    `insert into medications (circle_id, name, purpose, n_morning, n_afternoon, n_night, t_morning, t_afternoon, t_night, food, importance, stock, pill_photo_id, strip_photo_id)
+     values ($1,$2,$3,$4,$5,$6,'08:00','13:00','21:00',$7,'regular',$8,$9,$10)`,
+    [c.id, m.name, m.purpose ?? null, m.n_morning, m.n_afternoon, m.n_night, m.food, m.stock, pill, strip]);
+  const pattern = `${m.n_morning}-${m.n_afternoon}-${m.n_night}`;
+  await logActivity(c.id, c.person_name, `Added ${m.name} (${pattern}) themselves`);
+  await ensureDoses(c.id);
+  const all = await recipients(c.id, 'all');
+  await sendMail(c.id, all.map((x) => x.email), `${displayName(c)} added a medicine: ${m.name}`, layout({
+    circleLabel: circleLabel(c), title: `${esc(c.person_name)} added ${esc(m.name)}`,
+    lines: [`Schedule ${esc(pattern)}, using the usual times (8 am, 1 pm, 9 pm). Please check the times and how important it is.`],
+    buttons: [{ label: 'Open medicines', href: `${APP_URL}/app/medicines`, tone: 'out' }],
+  }));
+  redirect('/p?tab=day&added=1');
 }

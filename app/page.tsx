@@ -1,5 +1,6 @@
 import { Brand, Icon } from '@/components/ui';
 import { currentMember, currentPerson } from '@/lib/session';
+import { logout } from './access-actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +11,11 @@ export default async function Home() {
       <header className="shell-top">
         <Brand />
         <nav className="row" style={{ flexWrap: 'wrap' }} aria-label="Account">
-          {member ? <a className="btn go sm" href="/app">Open {member.circle.call_name || member.circle.person_name}&apos;s circle</a>
+          {member ? <>
+                <span className="small" style={{ fontSize: 15 }}>Signed in as <b>{member.member.name}</b></span>
+                <a className="btn go sm" href="/app">Open {member.circle.call_name || member.circle.person_name}&apos;s circle</a>
+                <form action={logout}><button className="btn out sm">Not you? Sign out</button></form>
+              </>
             : person ? <a className="btn go sm" href="/p">Open my medicines</a>
             : <>
                 <a className="btn out sm" href="/signin">Sign in</a>
